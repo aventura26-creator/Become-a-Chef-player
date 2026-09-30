@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chef player: Make your recipe</title>
+<style>
+  body {
+    margin: 0;
+    font-family: 'Comic Sans MS', 'Arial Rounded MT Bold', sans-serif;
+    background-color: #f4f9f4;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+  h2 { text-align: center; color: #2c3e50; margin-top: 5px; font-size: 22px;}
+  .container {
+    display: flex;
+    width: 100%;
+    padding: 15px;
+    gap: 15px;
+  }
+  .column {
+    background: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .left { flex: 1.2; border: 3px solid #82ccdd; }
+  .right { flex: 1; border: 3px solid #f8a5c2; }
+  
+  .center {
+    flex: 2;
+    background-color: white;
+    background-image:
+      linear-gradient(45deg, #ff9999 25%, transparent 25%, transparent 75%, #ff9999 75%, #ff9999),
+      linear-gradient(45deg, #ff9999 25%, transparent 25%, transparent 75%, #ff9999 75%, #ff9999);
+    background-size: 60px 60px;
+    background-position: 0 0, 30px 30px;
+    border: 5px solid #d63031;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .center-header {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .score-board {
+    display: flex;
+    gap: 15px;
+  }
+  .score-chip {
+    font-size: 16px;
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 8px;
+    background: #eee;
+    color: #555;
+  }
+  .score-chip.active {
+    background: #fff3e0;
+    color: #e67e22;
+    border: 2px dashed #e67e22;
+  }
+  
+  .category-title {
+    background: #f1c40f;
+    color: #333;
+    padding: 8px;
+    border-radius: 8px;
+    margin-top: 15px;
+    font-weight: bold;
+    text-align: center;
+  }
+  
+  .item, .command {
+    background: #e0f7fa;
+    border: 2px solid #00acc1;
+    border-radius: 8px;
+    padding: 10px;
+    margin: 5px;
+    cursor: grab;
+    display: inline-block;
+    font-size: 16px;
+    font-weight: bold;
+    color: #006064;
+    user-select: none;
+    box-shadow: 1px 2px 4px rgba(0,0,0,0.1);
+  }
+  .item:hover, .command:hover { transform: scale(1.05); }
+  .command {
+    background: #ffebee;
+    border-color: #e53935;
+    color: #b71c1c;
+    display: block;
+    text-align: center;
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+  
+  .dropzone {
+    flex-grow: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 10px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 10px;
+    min-height: 200px;
+    overflow-y: auto;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    background: rgba(255,255,255,0.9);
+    padding: 10px;
+    border-radius: 10px;
+    margin-top: 10px;
+  }
+  .phase-btn {
+    background-color: #3498db;
+    color: white;
+    font-weight: bold;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .phase-btn:hover { background-color: #2980b9; }
+  .finish-btn {
+    background-color: #2ecc71;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 5px;
+  }
+  .finish-btn:hover { background-color: #27ae60; }
+
+  /* Ventana Modal */
+  #feedbackModal {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #ffffff;
+    border: 6px solid #f1c40f;
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(0,0,0,0.4);
+    z-index: 1000;
+    min-width: 300px;
+  }
+  #modalIcon { font-size: 60px; margin: 0; }
+  #modalTitle { color: #e67e22; font-size: 32px; margin: 10px 0; }
+  #modalText { font-size: 18px; color: #555; }
+  .action-btn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 18px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="column left">
+    <h2>Products</h2>
+
+    <div class="category-title">Ingredients</div>
+    <div>
+      <div class="item" draggable="true" ondragstart="drag(event)">🍚 Rice</div>
+      <div class="item" draggable="true" ondragstart="drag(event)">💧 Water</div>
+      <div class="item" draggable="true" ondragstart="drag(event)">🧄 Garlic</div>
+      <div class="item" draggable="true" ondragstart="drag(event)">🍝 Spaghetti</div>
+      <div class="item" draggable="true" ondragstart="drag(event)">🧂 Salt</div>
+      <div class="item" draggable="true" ondragstart="drag(event)">🍅 Tomato</div>
+      <div class="item" draggable="true" ondragstart="drag(event)">🍾 Oil</div>
+      <div class="item" draggable="true" ondragstart="drag(event)">🧀 Cheese</div>
+    </div>
+
+    <div class="category-title">Tools</div>
+    <div>
+      <div class="item" draggable="true" ondragstart="drag(event)">🍲 Pot</div>
+      <div class="item" draggable="true" ondragstart="drag(event)">🥄 Spoon</div>
+      <div class="item" draggable="true" ondragstart="drag(event)">🍳 Pan</div>
+      <div class="item" draggable="true" ondragstart="drag(event)">🔪 Knife</div>
+      <div class="item" draggable="true" ondragstart="drag(event)">♨️ Stove</div>
+    </div>
+
+    <div class="category-title">Actions</div>
+    <div>
+      <div class="item" draggable="true" ondragstart="drag(event)">Add</div>
+      <div class="item" draggable="true" ondragstart="drag(event)">Mix</div>
+      <div class="item" draggable="true" ondragstart="drag(event)">Stir</div>
+      <div class="item" draggable="true" ondragstart="drag(event)">Serve</div>
+      <div class="item" draggable="true" ondragstart="drag(event)">Cook</div>
+      <div class="item" draggable="true" ondragstart="drag(event)">Boil</div>
+      <div class="item" draggable="true" ondragstart="drag(event)">Put</div>
+    </div>
+  </div>
+
+  <div class="column center">
+    <div class="center-header">
+      <h2 style="margin:0;">Chef player: Make your recipe</h2>
+      <div class="score-board">
+        <div id="chip-ing" class="score-chip">Ingredients: 0</div>
+        <div id="chip-tools" class="score-chip">Tools: 0</div>
+        <div id="chip-act" class="score-chip">Actions: 0</div>
+      </div>
+    </div>
+    
+    <div class="dropzone" id="board" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+    
+    <div class="controls">
+      <button class="phase-btn" onclick="checkPhase('ingredients')">1. Check Ingredients</button>
+      <button class="phase-btn" onclick="checkPhase('tools')">2. Check Tools</button>
+      <button class="phase-btn" onclick="checkPhase('actions')">3. Check Actions</button>
+      <button class="finish-btn" onclick="finishGame()">👨‍🍳 Finish Recipe! 👨‍🍳</button>
+    </div>
+  </div>
+
+  <div class="column right">
+    <h2>Commands</h2>
+    <div class="command" draggable="true" ondragstart="drag(event)">Start</div>
+    <div class="command" draggable="true" ondragstart="drag(event)">Level 1</div>
+    <div class="command" draggable="true" ondragstart="drag(event)">Next level</div>
+    <div class="command" draggable="true" ondragstart="drag(event)">Play</div>
+    <div class="command" draggable="true" ondragstart="drag(event)">Ready</div>
+    <div class="command" draggable="true" ondragstart="drag(event)">Game over</div>
+    <div class="command" draggable="true" ondragstart="drag(event)">Stop</div>
+    <div class="command" draggable="true" ondragstart="drag(event)">Points</div>
+  </div>
+</div>
+
+<!-- Ventana de retroalimentación -->
+<div id="feedbackModal">
+  <h1 id="modalIcon">⭐</h1>
+  <h2 id="modalTitle">Point!</h2>
+  <p id="modalText">Great job!</p>
+  <button class="action-btn" id="modalBtn">Continue</button>
+</div>
+
+<script>
+  let ptsIngredients = 0;
+  let ptsTools = 0;
+  let ptsActions = 0;
+
+  function allowDrop(ev) { ev.preventDefault(); }
+
+  function drag(ev) {
+    let text = ev.target.innerText;
+    ev.dataTransfer.setData("text/plain", text);
+    ev.dataTransfer.setData("className", ev.target.className);
+    
+    let wordToSpeak = text.replace(/[^\x00-\x7F]/g, "").trim(); 
+    let utterance = new SpeechSynthesisUtterance(wordToSpeak);
+    utterance.lang = "en-US";
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function drop(ev) {
+    ev.preventDefault();
+    var data = ev.dataTransfer.getData("text/plain");
+    var className = ev.dataTransfer.getData("className");
+
+    var clone = document.createElement("div");
+    clone.className = className;
+    clone.innerText = data;
+    clone.title = "Double click to remove";
+    clone.ondblclick = function() { this.remove(); };
+
+    document.getElementById("board").appendChild(clone);
+  }
+
+  function getBoardWords() {
+    return Array.from(document.getElementById("board").children).map(el => el.innerText.replace(/[^\x00-\x7F]/g, "").trim());
+  }
+
+  function hasAllElements(boardArray, requiredArray) {
+    return requiredArray.every(item => boardArray.includes(item));
+  }
+
+  // Muestra el aviso y configura el botón
+  function showModal(type, text) {
+    let modal = document.getElementById("feedbackModal");
+    let icon = document.getElementById("modalIcon");
+    let title = document.getElementById("modalTitle");
+    let desc = document.getElementById("modalText");
+    let btn = document.getElementById("modalBtn");
+
+    if (type === "point") {
+      icon.innerText = "⭐";
+      title.innerText = "Point!";
+      title.style.color = "#2ecc71";
+      modal.style.borderColor = "#2ecc71";
+      btn.innerText = "Continue";
+      btn.onclick = closeModal; // Solo cierra el aviso
+      btn.style.backgroundColor = "#2ecc71";
+    } else if (type === "do_again") {
+      icon.innerText = "🔄";
+      title.innerText = "Do again!";
+      title.style.color = "#e74c3c";
+      modal.style.borderColor = "#e74c3c";
+      btn.innerText = "Restart";
+      btn.onclick = restartGame; // Borra el tablero
+      btn.style.backgroundColor = "#e74c3c";
+    } else if (type === "winner") {
+      icon.innerText = "👨‍🍳✨";
+      title.innerText = "You are the winner!";
+      title.style.color = "#f39c12";
+      modal.style.borderColor = "#f1c40f";
+      btn.innerText = "Restart";
+      btn.onclick = restartGame; // Borra el tablero para un nuevo juego
+      btn.style.backgroundColor = "#3498db";
+    }
+
+    desc.innerText = text;
+    modal.style.display = "block";
+  }
+
+  function closeModal() {
+    document.getElementById("feedbackModal").style.display = "none";
+  }
+
+  // Función para borrar el tablero y reiniciar los puntos
+  function restartGame() {
+    closeModal();
+    document.getElementById("board").innerHTML = ""; // Limpia el mantel
+    ptsIngredients = 0;
+    ptsTools = 0;
+    ptsActions = 0;
+    
+    // Reinicia los letreros de puntos
+    document.getElementById("chip-ing").className = "score-chip";
+    document.getElementById("chip-ing").innerText = "Ingredients: 0";
+    document.getElementById("chip-tools").className = "score-chip";
+    document.getElementById("chip-tools").innerText = "Tools: 0";
+    document.getElementById("chip-act").className = "score-chip";
+    document.getElementById("chip-act").innerText = "Actions: 0";
+  }
+
+  function checkPhase(phase) {
+    let boardItems = getBoardWords();
+    let isRice = boardItems.includes("Rice");
+    let isPasta = boardItems.includes("Spaghetti");
+
+    if (!isRice && !isPasta && phase === 'ingredients') {
+      showModal("do_again", "Start by adding Rice or Spaghetti to the table!");
+      return;
+    }
+
+    const riceIng = ["Rice", "Water", "Salt", "Garlic", "Oil"];
+    const pastaIng = ["Spaghetti", "Water", "Salt", "Tomato", "Cheese", "Oil", "Garlic"];
+    const toolsRequired = ["Knife", "Stove", "Pot", "Spoon", "Pan"];
+    const riceActions = ["Add", "Mix", "Serve", "Cook", "Boil", "Put"];
+    const pastaActions = ["Add", "Mix", "Serve", "Cook", "Boil", "Put", "Stir"];
+
+    if (phase === 'ingredients') {
+      if (isRice && hasAllElements(boardItems, riceIng)) {
+        ptsIngredients = 1;
+        document.getElementById("chip-ing").className = "score-chip active";
+        document.getElementById("chip-ing").innerText = "Ingredients: 1";
+        showModal("point", "All ingredients for Rice are correct!");
+      } else if (isPasta && hasAllElements(boardItems, pastaIng)) {
+        ptsIngredients = 1;
+        document.getElementById("chip-ing").className = "score-chip active";
+        document.getElementById("chip-ing").innerText = "Ingredients: 1";
+        showModal("point", "All ingredients for Spaghetti are correct!");
+      } else {
+        showModal("do_again", "Missing ingredients. Check your recipe!");
+      }
+    }
+
+    if (phase === 'tools') {
+      if (hasAllElements(boardItems, toolsRequired)) {
+        ptsTools = 1;
+        document.getElementById("chip-tools").className = "score-chip active";
+        document.getElementById("chip-tools").innerText = "Tools: 1";
+        showModal("point", "All cooking tools are ready!");
+      } else {
+        showModal("do_again", "You need Knife, Stove, Pot, Spoon, and Pan!");
+      }
+    }
+
+    if (phase === 'actions') {
+      if (isRice && hasAllElements(boardItems, riceActions)) {
+        ptsActions = 1;
+        document.getElementById("chip-act").className = "score-chip active";
+        document.getElementById("chip-act").innerText = "Actions: 1";
+        showModal("point", "All actions for Rice are correct!");
+      } else if (isPasta && hasAllElements(boardItems, pastaActions)) {
+        ptsActions = 1;
+        document.getElementById("chip-act").className = "score-chip active";
+        document.getElementById("chip-act").innerText = "Actions: 1";
+        showModal("point", "All actions for Spaghetti are correct!");
+      } else {
+        showModal("do_again", "Missing actions! Think about what the Chef does.");
+      }
+    }
+  }
+
+  function finishGame() {
+    let totalPoints = ptsIngredients + ptsTools + ptsActions;
+    if (totalPoints === 3) {
+      showModal("winner", "Excellent recipe, Chef! You completed all phases.");
+    } else {
+      showModal("do_again", "You need 3 points to win. Check the missing phases!");
+    }
+  }
+</script>
+</body>
+</html>
